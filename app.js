@@ -473,7 +473,7 @@ function startHttpListener() {
 
   // **** have express do basic JSON parsing ****
 
-  app.use(express.json());
+  app.use(express.json({type: ['application/json', 'application/fhir+json']}));
 
   // **** configure root handler people can make sure it works ****
 
