@@ -2,21 +2,26 @@ const cors = require('cors');
 const express = require('express');
 const fetch = require('node-fetch');
 
+/** set constants for later use (do NOT change unless you are not using the companion UI) */
+const localListenPort = 32019;
 
-// **** set constants for later use ****
-const localListenPort = process.env.PORT || 32019;
-
-// **** define the public proxy URL (to use in the Subscription - blank for local only) ****
+/** define the public proxy URL (to use in the Subscription - blank for local only) */
 const publicUrl = '';
 
-// **** define the FHIR server URL ****
+/** define the FHIR server URL */
 const fhirServerUrl = 'https://server.subscriptions.argo.run';
 
-// **** patient ID to use in this example - will be created if it doesn't exist ****
+/** patient ID to use in this example - will be created if it doesn't exist */
 const patientId = 'DevDays00120';
 
-// **** our subscription id (once created) ****
+/** our subscription id (once created) */
 var subscriptionId = '';
+
+/** our encounter id (once created) */
+var encounterId = '';
+
+/** number of notifications we have received */
+var notificationCount = 0;
 
 /** Function that runs this sever (required to be in function for async/await) */
 async function run() {
@@ -38,7 +43,7 @@ async function run() {
 
   console.log('Found Topics:');
   topics.forEach(topic => {
-    console.log(` Topic/${topic.id} - ${topic.title}: ${topic.description}`);
+    console.log(` Topic/${topic.id} - ${topic.title}: ${topic.description} (${topic.url})`);
   });
 
   // **** make sure our patient exists ****
@@ -55,18 +60,165 @@ async function run() {
     process.exit(1);
   }
 
-  // **** post an encounter ****
+  // **** post an encounter, this program will exit when the notification is receieved ****
 
+  if (!await postEncounter()) {
+    console.log('Failed to create encounter!');
+    await deleteSubscription();
+    process.exit(1);
+  }
+}
 
-  // **** delete our subscription ****
+/** Handle POST events on the /notification url */
+async function handleNotificationPost(req, res) {
+  // **** return generic OK ****
 
-  await deleteSubscription();
+  res.status(200).send();
+
+  // **** tell the user we received something ****
+
+  console.log('Received POST on /notification')
+
+  // **** express has already parsed this for us ****
+
+  let bundle = req.body;
+
+  // **** dump the request body for the user ****
+
+  // console.log('Body of POST:', bundle);
+
+  // **** attempt to parse the notification bundle ****
+
+  try {
+    let eventCount = NaN;
+		let bundleEventCount = NaN;
+		let status = '';
+		let topicUrl = '' ;
+    let subscriptionUrl = '';
+    
+    if ((bundle) &&
+        (bundle.meta) &&
+        (bundle.meta.extension))
+    {
+      bundle.meta.extension.forEach(element => {
+        if (element.url.endsWith('subscriptionEventCount') ||
+            element.url.endsWith('subscription-event-count')) {
+          eventCount = element.valueDecimal;
+        } else if (element.url.endsWith('bundleEventCount') ||
+                  element.url.endsWith('bundle-event-count')) {
+          bundleEventCount = element.valueUnsignedInt;
+        } else if (element.url.endsWith('subscriptionStatus') ||
+                  element.url.endsWith('subscription-status')) {
+          status = element.valueString;
+        } else if (element.url.endsWith('subscriptionTopicUrl') ||
+                  element.url.endsWith('subscription-topic-url')) {
+          topicUrl = element.valueUrl;
+        } else if (element.url.endsWith('subscriptionUrl') ||
+                  element.url.endsWith('subscription-url')) {
+          subscriptionUrl = element.valueUrl;
+        }
+      });
+    }
+
+    // **** increment the number of notifications we have received ****
+
+    notificationCount++;
+
+    // **** check for being a handshake ****
+
+    if (eventCount === 0) {
+      console.log(`Handshake:\n`+
+        `\tTopic:        ${topicUrl}\n` +
+        `\tSubscription: ${subscriptionUrl}\n` +
+        `\tStatus:       ${status}`);
+    } else {
+      console.log(`Notification #${eventCount}:\n`+
+      `\tTopic:         ${topicUrl}\n` +
+      `\tSubscription:  ${subscriptionUrl}\n` +
+      `\tStatus:        ${status}\n` +
+      `\tBundle Events: ${bundleEventCount}\n`+
+      `\tTotal Events:  ${eventCount}`);
+    }
+    
+    // **** check if we are done ****
+
+    if (notificationCount === 2) {
+      await deleteSubscription();
+      process.exit(1);
+    }
+
+  } catch (err) {
+    console.log(`Failed to parse notification: ${err}`);
+    await deleteSubscription();
+    process.exit(1);
+  }
 }
 
 // **** run our server ***
 
 run();
 
+/** POST an encounter to the server using our specified Patient ID */
+async function postEncounter() {
+  // **** create our encounter object ****
+
+  let encounter = {
+    resourceType: 'Encounter',
+    class: {
+      system: 'http://terminology.hl7.org/CodeSystem/v3-ActCode',
+      code: 'VR',
+    },
+    status: 'in-progress',
+    subject: {
+      reference: `Patient/${patientId}`,
+    }
+  }
+  
+  // *** build the URL to POST this encounter ****
+
+  let url = new URL('Encounter?_format=json', fhirServerUrl).toString();
+
+  try {
+    let response = await fetch(url, {
+      method: 'POST',
+      headers: {
+        'Accept': 'application/fhir+json',
+        'Content-Type': 'application/fhir+json;charset=utf-8',
+        'Prefer': 'return=representation',
+      },
+      body: JSON.stringify(encounter),
+    });
+    
+    if (!response.ok) {
+      return false;
+    }
+
+    // **** grab the body ****
+    
+    let body = await response.text();
+
+    // **** parse the body ****
+
+    let enc = JSON.parse(body);
+
+    // **** grab the id so we can clean up ****
+
+    encounterId = enc.id;
+
+    // **** log ****
+
+    console.log(`Created encounter: Encounter/${encounterId}`);
+
+    // **** success ****
+
+    return true;
+  } catch (err) {
+    console.log(`createSubscription: ${err}`);
+    return false;
+  }
+}
+
+/** Delete a subscription from the server */
 async function deleteSubscription() {
   let url = new URL(`Subscription/${subscriptionId}`, fhirServerUrl);
 
@@ -118,11 +270,13 @@ async function createSubscription(topic) {
       value: `Patient/${patientId}`,
     }],
     end: '',
-    topic: {reference: topic.topicUrl},
+    topic: {reference: topic.url},
     reason: 'DevDays Example - Node',
     status: 'requested'
   }
   
+  // console.log('Subscription:', subscription);
+
   // *** build the URL to POST this subscription ****
 
   let url = new URL('Subscription', fhirServerUrl).toString();
@@ -166,7 +320,6 @@ async function createSubscription(topic) {
     return false;
   }
 }
-
 
 /** Get a Bundle of Topics from a FHIR server */
 async function getTopics() {
@@ -327,6 +480,8 @@ function startHttpListener() {
   app.get('/', async (req, res) => {
     res.send('Server is alive and listening...');
   });
+
+  app.post('/notification', handleNotificationPost)
 
   // **** configure 404 handler ****
 
