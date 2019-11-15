@@ -144,7 +144,7 @@ async function handleNotificationPost(req, res) {
 
     if (notificationCount === 2) {
       await deleteSubscription();
-      process.exit(1);
+      process.exit(0);
     }
 
   } catch (err) {
