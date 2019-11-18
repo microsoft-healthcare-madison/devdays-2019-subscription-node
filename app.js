@@ -103,7 +103,7 @@ async function handleNotificationPost(req, res) {
       bundle.meta.extension.forEach(element => {
         if (element.url.endsWith('subscriptionEventCount') ||
             element.url.endsWith('subscription-event-count')) {
-          eventCount = element.valueDecimal;
+          eventCount = element.valueUnsignedInt;
         } else if (element.url.endsWith('bundleEventCount') ||
                   element.url.endsWith('bundle-event-count')) {
           bundleEventCount = element.valueUnsignedInt;
