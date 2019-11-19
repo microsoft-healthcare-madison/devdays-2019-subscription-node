@@ -101,20 +101,15 @@ async function handleNotificationPost(req, res) {
         (bundle.meta.extension))
     {
       bundle.meta.extension.forEach(element => {
-        if (element.url.endsWith('subscriptionEventCount') ||
-            element.url.endsWith('subscription-event-count')) {
+        if (element.url.endsWith('subscription-event-count')) {
           eventCount = element.valueUnsignedInt;
-        } else if (element.url.endsWith('bundleEventCount') ||
-                  element.url.endsWith('bundle-event-count')) {
+        } else if (element.url.endsWith('bundle-event-count')) {
           bundleEventCount = element.valueUnsignedInt;
-        } else if (element.url.endsWith('subscriptionStatus') ||
-                  element.url.endsWith('subscription-status')) {
+        } else if (element.url.endsWith('subscription-status')) {
           status = element.valueString;
-        } else if (element.url.endsWith('subscriptionTopicUrl') ||
-                  element.url.endsWith('subscription-topic-url')) {
+        } else if (element.url.endsWith('subscription-topic-url')) {
           topicUrl = element.valueUrl;
-        } else if (element.url.endsWith('subscriptionUrl') ||
-                  element.url.endsWith('subscription-url')) {
+        } else if (element.url.endsWith('subscription-url')) {
           subscriptionUrl = element.valueUrl;
         }
       });
