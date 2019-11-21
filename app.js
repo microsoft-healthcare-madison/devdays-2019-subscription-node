@@ -13,7 +13,7 @@ const publicUrl = '';
 const fhirServerUrl = 'https://server.subscriptions.argo.run';
 
 /** patient ID we are using (once created) */
-const patientId = '';
+var patientId = '';
 
 /** our subscription id (once created) */
 var subscriptionId = '';
