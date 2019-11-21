@@ -1,6 +1,7 @@
 const cors = require('cors');
 const express = require('express');
 const fetch = require('node-fetch');
+const uuid = require('uuid/v4');
 
 /** set constants for later use (do NOT change unless you are not using the companion UI) */
 const localListenPort = 32019;
@@ -11,8 +12,8 @@ const publicUrl = '';
 /** define the FHIR server URL */
 const fhirServerUrl = 'https://server.subscriptions.argo.run';
 
-/** patient ID to use in this example - will be created if it doesn't exist */
-const patientId = 'DevDays00120';
+/** patient ID we are using (once created) */
+const patientId = '';
 
 /** our subscription id (once created) */
 var subscriptionId = '';
@@ -367,6 +368,10 @@ async function getTopics() {
 
 /** Creates a patient record in case we need one */
 async function createPatientIfRequired() {
+  // **** create a patient id ****
+
+  patientId = uuid();
+  
   // **** build the URL to check for our patient ****
 
   let url = new URL(`Patient/${patientId}`, fhirServerUrl);
