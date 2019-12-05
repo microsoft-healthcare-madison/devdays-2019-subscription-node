@@ -36,15 +36,15 @@ async function run() {
   let topics = await getTopics();
 
   if (topics.length < 1) {
-    console.log('Failed to get Topics!');
+    console.log('Failed to get SubscriptionTopics!');
     process.exit(1);
   }
 
   // **** list topics in the console ****
 
-  console.log('Found Topics:');
+  console.log('Found SubscriptionTopics:');
   topics.forEach(topic => {
-    console.log(` Topic/${topic.id} - ${topic.title}: ${topic.description} (${topic.url})`);
+    console.log(` SubscriptionTopic/${topic.id} - ${topic.title}: ${topic.description} (${topic.url})`);
   });
 
   // **** make sure our patient exists ****
@@ -124,16 +124,16 @@ async function handleNotificationPost(req, res) {
 
     if (eventCount === 0) {
       console.log(`Handshake:\n`+
-        `\tTopic:        ${topicUrl}\n` +
-        `\tSubscription: ${subscriptionUrl}\n` +
-        `\tStatus:       ${status}`);
+        `\tSubscriptionTopic: ${topicUrl}\n` +
+        `\tSubscription:      ${subscriptionUrl}\n` +
+        `\tStatus:            ${status}`);
     } else {
       console.log(`Notification #${eventCount}:\n`+
-      `\tTopic:         ${topicUrl}\n` +
-      `\tSubscription:  ${subscriptionUrl}\n` +
-      `\tStatus:        ${status}\n` +
-      `\tBundle Events: ${bundleEventCount}\n`+
-      `\tTotal Events:  ${eventCount}`);
+      `\tSubscriptionTopic: ${topicUrl}\n` +
+      `\tSubscription:      ${subscriptionUrl}\n` +
+      `\tStatus:            ${status}\n` +
+      `\tBundle Events:     ${bundleEventCount}\n`+
+      `\tTotal Events:      ${eventCount}`);
     }
     
     // **** check if we are done ****
@@ -321,7 +321,7 @@ async function createSubscription(topic) {
 async function getTopics() {
   // **** build the URL to the server ****
 
-  let url = new URL('Topic', fhirServerUrl).toString();
+  let url = new URL('SubscriptionTopic', fhirServerUrl).toString();
 
   try {
     // **** fetch the Topics ****
