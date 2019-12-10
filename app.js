@@ -103,7 +103,7 @@ async function handleNotificationPost(req, res) {
     {
       bundle.meta.extension.forEach(element => {
         if (element.url.endsWith('subscription-event-count')) {
-          eventCount = element.valueUnsignedInt;
+          eventCount = Number(element.valueInteger64);
         } else if (element.url.endsWith('bundle-event-count')) {
           bundleEventCount = element.valueUnsignedInt;
         } else if (element.url.endsWith('subscription-status')) {
@@ -262,7 +262,7 @@ async function createSubscription(topic) {
     },
     filterBy: [{
       matchType: '=',
-      name: 'patient',
+      searchParamName: 'patient',
       value: `Patient/${patientId}`,
     }],
     end: '',
