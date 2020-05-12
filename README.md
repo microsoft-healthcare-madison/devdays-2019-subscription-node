@@ -2,7 +2,8 @@
 
 A basic Node JS project for use in discovering the basics of FHIR R5 Subscriptions.
 
-Built for DevDays 2019 Europe.
+* Built for DevDays 2019 Europe.
+* Updated for DevDays 2020 US (May - Online)
 
 Meant to be used in conjunction with the test server at http://subscriptions.argo.run
 
