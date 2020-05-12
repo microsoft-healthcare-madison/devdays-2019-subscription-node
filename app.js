@@ -1,6 +1,7 @@
 const cors = require('cors');
 const express = require('express');
 const fetch = require('node-fetch');
+const localtunnel = require('localtunnel');
 const uuid = require('uuid/v4');
 
 /** set constants for later use (do NOT change unless you are not using the companion UI) */
@@ -8,6 +9,12 @@ const localListenPort = 32019;
 
 /** define the public proxy URL (to use in the Subscription - blank for local only) */
 const publicUrl = '';
+
+/** define a constant to allow localTunnel to function - disable if testing against a local server */
+const allowTunnel = true;
+
+/** to hold our tunnel object */
+var tunnel = null;
 
 /** define the FHIR server URL */
 const fhirServerUrl = 'https://server.subscriptions.argo.run';
@@ -29,6 +36,11 @@ async function run() {
 
   // start our local HTTP server
   startHttpListener();
+
+  // check for needing tunnel
+  if ((publicUrl === '') && (allowTunnel)) {
+    await openTunnel();
+  }
 
   // get a list of Topic resources
   let topics = await getTopics();
@@ -247,6 +259,18 @@ async function deleteSubscription() {
 
 /** Create a subscription on the server */
 async function createSubscription(topic) {
+  var endpointUrl;
+
+  if (tunnel) {
+    endpointUrl = `${tunnel.url}/notification`;
+  } else if (publicUrl) {
+    endpointUrl = `${publicUrl}`;
+  } else {
+    endpointUrl = `http://localhost:${localListenPort}/notification`;
+  }
+
+  console.log('Requesting for endpoint url:', endpointUrl);
+
   // create our subscription object
   let subscription = {
       resourceType: 'Subscription',
@@ -263,7 +287,7 @@ async function createSubscription(topic) {
         system: 'http://terminology.hl7.org/CodeSystem/subscription-channel-type',
         code: 'rest-hook'
       },
-      endpoint: publicUrl ? publicUrl : `http://localhost:${localListenPort}/notification`,
+      endpoint: endpointUrl,
       header: [],
       heartbeatPeriod: 60,
       content: 'id-only',
@@ -429,6 +453,26 @@ async function createPatient() {
   }
 }
 
+/** Open a localTunnel proxy */
+async function openTunnel() {
+  try {
+    // **** open our tunnel ****
+
+    tunnel = await localtunnel({port: localListenPort});
+
+    // **** tell the user what's going on ****
+
+    console.log(`Created public tunnel: ${tunnel.url}`)
+
+    tunnel.on('close', () => {console.log('Tunnel closed!')});
+    tunnel.on('request', (info) => {console.log('Tunnel Received request', info)});
+    tunnel.on('error', (err) => {console.log('Tunnel error!', err)});
+
+  } catch (err) {
+    console.log(`Failed to create tunnel: ${err}`);
+    process.exit(1);
+  }
+}
 
 /** Configure and Start the HTTP listener */
 function startHttpListener() {
