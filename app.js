@@ -10,7 +10,7 @@ const localListenPort = 32019;
 const publicUrl = '';
 
 /** define the FHIR server URL */
-const fhirServerUrl = 'http://localhost:56340'; // 'https://server.subscriptions.argo.run';
+const fhirServerUrl = 'https://server.subscriptions.argo.run';
 
 /** patient ID we are using (once created) */
 var patientId = '';
