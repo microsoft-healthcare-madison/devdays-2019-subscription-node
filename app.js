@@ -7,16 +7,16 @@ const uuid = require('uuid/v4');
 /** set constants for later use (do NOT change unless you are not using the companion UI) */
 const localListenPort = 32019;
 
-/** define the public proxy URL (to use in the Subscription - blank for local only) */
+/** public proxy URL to use in the Subscription - '' if testing against a local server or using tunnel */
 const publicUrl = '';
 
-/** define a constant to allow localTunnel to function - disable if testing against a local server */
-const allowTunnel = true;
+/** flag for using localTunnel to function - disable if testing against a local server and not using a public url */
+const allowTunnel = false;
 
 /** to hold our tunnel object */
 var tunnel = null;
 
-/** define the FHIR server URL */
+/** FHIR server URL - Requires support for R5 subscriptions */
 const fhirServerUrl = 'https://server.subscriptions.argo.run';
 
 /** patient ID we are using (once created) */
@@ -158,11 +158,12 @@ async function handleNotificationPost(req, res) {
         `\tStatus:            ${status}`);
     } else {
       console.log(`Notification #${eventCount}:\n`+
-      `\tSubscriptionTopic: ${topicUrl}\n` +
       `\tSubscription:      ${subscriptionUrl}\n` +
+      `\tSubscriptionTopic: ${topicUrl}\n` +
       `\tStatus:            ${status}\n` +
-      `\tBundle Events:     ${bundleEventCount}\n`+
-      `\tTotal Events:      ${eventCount}`);
+      `\tType:              ${notificationType}\n` +
+      `\tTotal Events:      ${eventCount}\n` +
+      `\tBundle Events:     ${bundleEventCount}`);
     }
     
     // check if we are done
