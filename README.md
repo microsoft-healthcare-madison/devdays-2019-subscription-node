@@ -1,3 +1,9 @@
+# Archival Note
+
+This repo contains example content used for DevDays 2019/2020 and has not been modified since. The contents will remain available as an archive, but it should be clear that it is not being updated.
+
+Thanks!
+
 # devdays-2019-subscription-node Info
 
 A basic Node JS project for use in discovering the basics of FHIR R5 Subscriptions.
